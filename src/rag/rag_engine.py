@@ -8,7 +8,7 @@ from config.settings import Config
 
 class RAGSystem:
     def __init__(self):
-        # We no longer use embeddings. We use TF-IDF.
+        # We use TF-IDF instead of HuggingFace Embeddings
         self.vectorizer = TfidfVectorizer()
         self.chunks = []
         self._initialize_store()
@@ -16,9 +16,7 @@ class RAGSystem:
     def _initialize_store(self):
         os.makedirs(Config.FAISS_DIR, exist_ok=True)
         
-        # For simplicity in this lightweight version, we recreate the index every time 
-        # (or you could save/load using pickle). 
-        # It is fast enough to do on startup with this small dataset.
+        # Initialize the index on every startup (it is very fast with TF-IDF)
         print("📄 Initializing Lightweight RAG System...")
         
         if not os.path.exists(Config.PDF_PATH):
