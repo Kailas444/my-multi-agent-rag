@@ -7,5 +7,5 @@ fpdf
 gradio
 requests
 python-dotenv
-duckduckgo-search==3.9.1
+duckduckgo-search==3.9.11
 pydantic
