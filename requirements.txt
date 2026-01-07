@@ -1,10 +1,11 @@
 langchain
 langchain-community
-langchain-huggingface
-langchain-openai
 langgraph
-faiss-cpu
-sentence-transformers
+# Removed: faiss-cpu (Heavy)
+# Removed: sentence-transformers (Heavy)
+# Removed: langchain-huggingface (Heavy)
+# Added: scikit-learn (Lightweight Replacement)
+scikit-learn
 pypdf
 fpdf
 gradio
