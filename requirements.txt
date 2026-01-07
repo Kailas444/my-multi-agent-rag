@@ -1,6 +1,7 @@
 langchain
 langchain-community
 langgraph
+langchain-openai 
 scikit-learn
 pypdf
 fpdf
