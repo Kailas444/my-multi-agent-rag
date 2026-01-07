@@ -32,7 +32,7 @@ def create_gradio_app():
         gr.Markdown("# ☁️ Cloud-Deployed Multi-Agent RAG System")
         with gr.Row():
             with gr.Column(scale=2):
-                chatbot = gr.Chatbot(label="Conversation", height=500)
+                chatbot = gr.Chatbot(label="Conversation", height=500, value=[])
                 user_input = gr.Textbox(label="Question")
                 with gr.Row():
                     submit_btn = gr.Button("Ask")
