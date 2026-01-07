@@ -1,29 +1,30 @@
 import os
 from typing import List, Dict, Tuple
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 from langchain_core.documents import Document
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import FAISS
-from langchain_huggingface import HuggingFaceEmbeddings
 
 from config.settings import Config
 
 class RAGSystem:
     def __init__(self):
-        self.embeddings = HuggingFaceEmbeddings(model_name=Config.EMBEDDING_MODEL)
-        self.vector_store = self._initialize_store()
+        # We no longer use embeddings. We use TF-IDF.
+        self.vectorizer = TfidfVectorizer()
+        self.chunks = []
+        self._initialize_store()
         
-    def _initialize_store(self) -> FAISS:
-        # Ensure directory exists
+    def _initialize_store(self):
         os.makedirs(Config.FAISS_DIR, exist_ok=True)
         
-        if os.path.exists(os.path.join(Config.FAISS_DIR, "index.faiss")):
-            print("✅ Loading existing FAISS index...")
-            return FAISS.load_local(Config.FAISS_DIR, self.embeddings, allow_dangerous_deserialization=True)
+        # For simplicity in this lightweight version, we recreate the index every time 
+        # (or you could save/load using pickle). 
+        # It is fast enough to do on startup with this small dataset.
+        print("📄 Initializing Lightweight RAG System...")
         
-        print(f"⚠️ Creating dummy PDF at {Config.PDF_PATH}...")
-        self._create_dummy_pdf()
+        if not os.path.exists(Config.PDF_PATH):
+            self._create_dummy_pdf()
+            
         self._ingest_pdf()
-        return self.vector_store
 
     def _create_dummy_pdf(self):
         from fpdf import FPDF
@@ -39,25 +40,42 @@ class RAGSystem:
 
     def _ingest_pdf(self):
         from pypdf import PdfReader
-        print("📄 Ingesting PDF...")
+        print("📄 Ingesting PDF into TF-IDF Matrix...")
         reader = PdfReader(Config.PDF_PATH)
-        docs = [Document(page_content=p.extract_text(), metadata={"source": "knowledge_base.pdf", "page": i+1}) 
-                for i, p in enumerate(reader.pages) if p.extract_text()]
         
-        splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
-        chunks = splitter.split_documents(docs)
+        # Simple text splitting
+        self.chunks = []
+        for i, page in enumerate(reader.pages):
+            text = page.extract_text()
+            if text:
+                # Split text into chunks of 300 chars
+                for j in range(0, len(text), 300):
+                    self.chunks.append(text[j:j+300])
         
-        self.vector_store = FAISS.from_documents(chunks, self.embeddings)
-        self.vector_store.save_local(Config.FAISS_DIR)
-        print("✅ FAISS Index Saved.")
+        # Create TF-IDF Matrix (Very fast and memory efficient)
+        self.tfidf_matrix = self.vectorizer.fit_transform(self.chunks)
+        print("✅ TF-IDF Indexing Complete.")
 
     def retrieve(self, query: str, k: int = 3) -> Tuple[str, List[Dict]]:
-        docs = self.vector_store.similarity_search_with_score(query, k=k)
-        relevant_docs = [d for d, score in docs if score < 1.4] 
+        # Convert query to vector
+        query_vec = self.vectorizer.transform([query])
         
-        if not relevant_docs:
+        # Calculate cosine similarity
+        similarities = cosine_similarity(query_vec, self.tfidf_matrix).flatten()
+        
+        # Get top k indices
+        top_indices = similarities.argsort()[-k:][::-1]
+        
+        # Prepare results
+        results = []
+        for i in top_indices:
+            # Filter out very low similarity results (Threshold 0.1)
+            if similarities[i] > 0.1:
+                results.append((self.chunks[i], {"source": Config.PDF_PATH, "page": 1}))
+        
+        if not results:
             return "", []
             
-        context = "\n\n".join([d.page_content for d in relevant_docs])
-        citations = [{"source": d.metadata.get("source"), "page": d.metadata.get("page")} for d in relevant_docs]
+        context = "\n\n".join([r[0] for r in results])
+        citations = [r[1] for r in results]
         return context, citations
