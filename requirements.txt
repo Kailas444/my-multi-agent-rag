@@ -1,15 +1,11 @@
 langchain
 langchain-community
 langgraph
-# Removed: faiss-cpu (Heavy)
-# Removed: sentence-transformers (Heavy)
-# Removed: langchain-huggingface (Heavy)
-# Added: scikit-learn (Lightweight Replacement)
 scikit-learn
 pypdf
 fpdf
 gradio
 requests
 python-dotenv
-duckduckgo-search
+duckduckgo-search==3.9.1
 pydantic
