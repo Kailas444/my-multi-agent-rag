@@ -1,9 +1,9 @@
 import re
 from typing import TypedDict, List, Dict, Any
 from src.rag.rag_engine import RAGSystem
-from src.tools.custom_tools import weather_tool_func, calculator_tool_func, wikipedia_search_tool # Updated import
+from src.tools.custom_tools import weather_tool_func, calculator_tool_func, wikipedia_search_tool
 
-# REMOVED: from langchain_community.tools import DuckDuckGoSearchRun (This was causing the error)
+# IMPORTANT: We REMOVED the line: from langchain_community.tools import DuckDuckGoSearchRun
 
 rag_system = RAGSystem()
 
@@ -67,7 +67,7 @@ def tool_executor_node(state: AgentState) -> AgentState:
         state["reasoning_trace"].append(f"Tool Used: Calculator(expr={expr})")
         
     else:
-        # Use the new Wikipedia Tool instead of DuckDuckGo
+        # CHANGED: Now using the new Wikipedia Tool instead of the broken DuckDuckGo
         result = wikipedia_search_tool(q)
         state["reasoning_trace"].append("Tool Used: Wikipedia Search")
         
