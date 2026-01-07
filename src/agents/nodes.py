@@ -1,10 +1,10 @@
 import re
 from typing import TypedDict, List, Dict, Any
 from src.rag.rag_engine import RAGSystem
-from src.tools.custom_tools import weather_tool_func, calculator_tool_func
-from langchain_community.tools import DuckDuckGoSearchRun
+from src.tools.custom_tools import weather_tool_func, calculator_tool_func, wikipedia_search_tool # Updated import
 
-search_tool = DuckDuckGoSearchRun()
+# REMOVED: from langchain_community.tools import DuckDuckGoSearchRun (This was causing the error)
+
 rag_system = RAGSystem()
 
 class AgentState(TypedDict):
@@ -65,9 +65,11 @@ def tool_executor_node(state: AgentState) -> AgentState:
         expr = re.sub(r"[^\d+\-*/().]", "", q)
         result = calculator_tool_func(expr)
         state["reasoning_trace"].append(f"Tool Used: Calculator(expr={expr})")
+        
     else:
-        result = search_tool.run(q)
-        state["reasoning_trace"].append("Tool Used: DuckDuckGo Search")
+        # Use the new Wikipedia Tool instead of DuckDuckGo
+        result = wikipedia_search_tool(q)
+        state["reasoning_trace"].append("Tool Used: Wikipedia Search")
         
     state["tool_output"] = result
     return state
