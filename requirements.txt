@@ -1,7 +1,8 @@
 langchain
 langchain-community
 langgraph
-langchain-openai 
+langchain-openai
+langchain-google-genai # <--- Add this
 scikit-learn
 pypdf
 fpdf
