@@ -3,28 +3,48 @@ from langgraph.graph import StateGraph, END
 from src.agents.nodes import AgentState, planner_node, rag_retriever_node, tool_executor_node, synthesizer_node
 from config.settings import Config
 
-# Check for GOOGLE API Key instead
-HAS_GOOGLE = bool(Config.GOOGLE_API_KEY) # You need to add this to settings.py
+# Check keys safely
+HAS_OPENAI = bool(Config.OPENAI_API_KEY)
+HAS_GOOGLE = bool(Config.GOOGLE_API_KEY)
 
 def enhanced_synthesizer_node(state: AgentState) -> AgentState:
+    # Priority: Try Google -> Try OpenAI -> Fallback to Local
     if HAS_GOOGLE:
-        from langchain_google_genai import ChatGoogleGenerativeAI
-        # Use GOOGLE_API_KEY
-        llm = ChatGoogleGenerativeAI(api_key=Config.GOOGLE_API_KEY, model="gemini-pro")
-        
-        prompt = f"""
-        Reasoning: {state['reasoning_trace']}
-        Context: {state.get('retrieved_context', 'None')}
-        Tool Output: {state.get('tool_output', 'None')}
-        Question: {state['query']}
-        Answer concisely.
-        """
-        state["final_answer"] = llm.invoke(prompt).content
-    else:
-        # Fallback
-        return synthesizer_node(state)
-    
-    return state
+        try:
+            from langchain_google_genai import ChatGoogleGenerativeAI
+            llm = ChatGoogleGenerativeAI(api_key=Config.GOOGLE_API_KEY, model="gemini-pro")
+            
+            prompt = f"""
+            Reasoning: {state['reasoning_trace']}
+            Context: {state.get('retrieved_context', 'None')}
+            Tool Output: {state.get('tool_output', 'None')}
+            Question: {state['query']}
+            Answer concisely.
+            """
+            state["final_answer"] = llm.invoke(prompt).content
+            return state
+        except Exception as e:
+            # If Google fails, print error in trace and fallback
+            state["reasoning_trace"].append(f"Google API Error: {e}. Trying Fallback.")
+            
+    elif HAS_OPENAI:
+        try:
+            from langchain_openai import ChatOpenAI
+            llm = ChatOpenAI(api_key=Config.OPENAI_API_KEY, temperature=0)
+            prompt = f"""
+            Reasoning: {state['reasoning_trace']}
+            Context: {state.get('retrieved_context', 'None')}
+            Tool Output: {state.get('tool_output', 'None')}
+            Question: {state['query']}
+            Answer concisely.
+            """
+            state["final_answer"] = llm.invoke(prompt).content
+            return state
+        except Exception as e:
+            state["reasoning_trace"].append(f"OpenAI API Error: {e}. Trying Fallback.")
+
+    # Final Fallback (Local Logic)
+    return synthesizer_node(state)
 
 def decide_route(state: AgentState) -> str:
     return "tool_executor" if state["plan"] == "use_tool" else "rag_retriever"
