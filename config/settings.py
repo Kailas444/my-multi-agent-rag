@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Config:
-    # Paths (Absolute paths for Docker stability)
+    # Paths
     PDF_PATH = "/app/data/knowledge_base.pdf"
     FAISS_DIR = "/app/data/faiss_store"
     
@@ -13,4 +13,5 @@ class Config:
     LLM_MODEL = "gpt-3.5-turbo"
     
     # API Keys
-    OPENAI_API_KEY = os.getenv("GEMINI_API_KEY")
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+    GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY") # <--- THIS WAS MISSING
