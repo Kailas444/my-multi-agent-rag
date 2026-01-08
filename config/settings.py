@@ -13,4 +13,4 @@ class Config:
     LLM_MODEL = "gpt-3.5-turbo"
     
     # API Keys
-    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+    OPENAI_API_KEY = os.getenv("GEMINI_API_KEY")
