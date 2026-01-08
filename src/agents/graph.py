@@ -3,13 +3,15 @@ from langgraph.graph import StateGraph, END
 from src.agents.nodes import AgentState, planner_node, rag_retriever_node, tool_executor_node, synthesizer_node
 from config.settings import Config
 
-# Enhanced Synthesizer: Use OpenAI if Key exists
-HAS_OPENAI = bool(Config.OPENAI_API_KEY)
+# Check for GOOGLE API Key instead
+HAS_GOOGLE = bool(Config.GOOGLE_API_KEY) # You need to add this to settings.py
 
 def enhanced_synthesizer_node(state: AgentState) -> AgentState:
-    if HAS_OPENAI:
-        from langchain_openai import ChatOpenAI
-        llm = ChatOpenAI(api_key=Config.OPENAI_API_KEY, temperature=0)
+    if HAS_GOOGLE:
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        # Use GOOGLE_API_KEY
+        llm = ChatGoogleGenerativeAI(api_key=Config.GOOGLE_API_KEY, model="gemini-pro")
+        
         prompt = f"""
         Reasoning: {state['reasoning_trace']}
         Context: {state.get('retrieved_context', 'None')}
@@ -19,7 +21,7 @@ def enhanced_synthesizer_node(state: AgentState) -> AgentState:
         """
         state["final_answer"] = llm.invoke(prompt).content
     else:
-        # Fallback to standard local logic
+        # Fallback
         return synthesizer_node(state)
     
     return state
